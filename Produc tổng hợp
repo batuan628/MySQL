@@ -1,4 +1,4 @@
-CREATE DEFINER=`bkav`@`%` PROCEDURE `BTH`(
+CREATE DEFINER= PROCEDURE `BTH`(
     IN `fact` VARCHAR(255),
     IN `org` VARCHAR(50),
     IN `timeKey` INT,
