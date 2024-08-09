@@ -42,10 +42,15 @@ SET SESSION group_concat_max_len = 1000000;
 			SELECT GROUP_CONCAT(
 					IF(
 						ORDINAL_POSITION = `pos` ,concat(
-						'UPPER(a.departmentName) AS ',COLUMN_NAME
-						),IF(COLUMN_NAME = "organizekey" ,concat(COLUMN_NAME) ,concat(
-							'NULL AS ',COLUMN_NAME)
-						)
+						'UPPER(b.departmentName) AS ',COLUMN_NAME
+						),
+						IF(
+                NUMERIC_PRECISION = 1,
+                   CONCAT("'FALSE' AS ",
+											COLUMN_NAME),IF(COLUMN_NAME = "organizekey" ,COLUMN_NAME ,concat(
+														'NULL AS ',COLUMN_NAME)
+									)
+							)
 						
 					)
 			)INTO result
