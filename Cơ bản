@@ -1,0 +1,43 @@
+SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'datamart' and table_name like ("%bth%") ;
+
+Lấy dữ liệu từ I và II :
+
+-- Đặt biến cho số thứ tự tăng dần
+SET @rn := 0;
+SET @current_type := '';
+
+-- Chọn các dữ liệu giữa "I" và "II" và các dữ liệu sau "II"
+SELECT *,
+       (@rn := IF(@current_type = loai_du_lieu, @rn + 1, 1)) AS stt_tang_dan,
+       (@current_type := loai_du_lieu)
+FROM (
+    -- Chọn các dữ liệu giữa "I" và "II"
+    SELECT  d.*, 'Giua I va II' AS loai_du_lieu
+    FROM du_lieu d
+    JOIN (
+        SELECT ma_so, 
+               MIN(stt) AS stt_start,
+               MAX(stt) AS stt_end
+        FROM du_lieu
+        WHERE loai IN ('I', 'II')
+        GROUP BY ma_so
+        HAVING COUNT(DISTINCT loai) = 2
+    ) t ON d.ma_so = t.ma_so
+    WHERE d.stt > t.stt_start AND d.stt < t.stt_end
+    
+    UNION ALL
+    
+    -- Chọn các dữ liệu sau "II"
+    SELECT  d.*, 'Sau II' AS loai_du_lieu
+    FROM du_lieu d
+    JOIN (
+        SELECT ma_so, MAX(stt) AS stt_ii
+        FROM du_lieu
+        WHERE loai = 'II'
+        GROUP BY ma_so
+    ) t ON d.ma_so = t.ma_so
+    WHERE d.stt > t.stt_ii
+) AS combined_data
+
+ORDER BY loai_du_lieu, ma_so, stt;
+
