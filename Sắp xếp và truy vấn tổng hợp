@@ -1,4 +1,4 @@
-CREATE DEFINER=`bkav`@`%` PROCEDURE `TH_01A`(IN `pOrganizekey` VARCHAR(50), IN `pYearkey` INT(4))
+CREATE DEFINER= PROCEDURE `TH_01A`(IN `pOrganizekey` VARCHAR(50), IN `pYearkey` INT(4))
 BEGIN
     -- Đặt biến cho số thứ tự tăng dần
     SET @rn := 0;
