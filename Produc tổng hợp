@@ -1,0 +1,57 @@
+CREATE DEFINER=`bkav`@`%` PROCEDURE `BTH`(
+    IN `fact` VARCHAR(255),
+    IN `org` VARCHAR(50),
+    IN `timeKey` INT,
+		IN `in_stt` int,
+		IN `dp_name` int
+)
+BEGIN
+-- DECLARE org VARCHAR(50);
+    -- Lấy thông tin trường
+    SET @fields_all = Field_table(`fact`, 'ALL', 0);
+--     SET @fields_sum = Field_table(`fact`, 'SUM', 0);
+    SET @fields_dpm = Field_table(`fact`, 'DPM', `dp_name`);
+    SET @field_pos = Field_table(`fact`, 'POS', `dp_name`);
+    SET @field_stt = Field_table(`fact`, 'POS', `in_stt`);
+		SET @org = IF(`org` = 'NN01.01', '', `org`);
+		SET @stt := 0;
+    SET @row_number = 1;
+    SET @current_group = NULL;
+    SET @stt = 0;
+    SET @current_key = '';
+		
+		
+		
+    SET @query0 = CONCAT(
+        "SELECT 
+						IF(@org = '','-','+') AS ", @field_stt,',NULL as du_lieu, ',@fields_dpm
+						," FROM ",`fact`," a"
+						, "
+							JOIN `eform-database`.department b ON b.Emails = a.organizekey 
+							AND b.ParentId =Get_Id_From_Emails(1, @org) and yearkey = ",timeKey,"
+							GROUP BY organizekey
+							"
+    );
+		
+    SET @query1 = CONCAT(
+        "UNION ALL
+				SELECT 
+						@stt :=if( @org = '',a.stt, IF(@current_key = organizekey, @stt + 1, 1)) AS stt, 
+						@current_key := organizekey as du_lieu, ", @fields_all,
+				" FROM ", `fact`," a ",
+				"JOIN  `eform-database`.department AS b ON b.Emails = a.organizekey 
+						WHERE 
+								yearkey = ",timeKey, "
+								AND b.ParentId =Get_Id_From_Emails(1, @org) and ",@field_pos," !='' and ",@field_stt," !=''
+								ORDER BY organizekey ,pos
+				"
+    );
+
+
+    SET @final_query := CONCAT(@query0, @query1);
+-- SELECT @query0;
+--    Chuẩn bị và thực thi câu lệnh
+    PREPARE stmt FROM @final_query;
+    EXECUTE stmt;
+    DEALLOCATE PREPARE stmt;
+END
