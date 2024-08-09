@@ -1,0 +1,67 @@
+#Xếp hạng nhiều cột :
+SELECT 
+    t1.donvichiso,
+    t1.nhanthucso, t1.rank AS nhanthucso_rank,
+    t2.thecheso, t2.rank AS thecheso_rank,
+    t3.hatangso, t3.rank AS hatangso_rank,
+    t4.nhanlucso, t4.rank AS nhanlucso_rank,
+    t5.atttn, t5.rank AS atttn_rank,
+    t6.hdcqs, t6.rank AS hdcqs_rank,
+    t7.hdkts, t7.rank AS hdkts_rank,
+    t8.hdxhs, t8.rank AS hdxhs_rank,
+    t9.tongdiem, t9.rank AS tongdiem_rank
+FROM 
+    (SELECT donvichiso, nhanthucso, 
+            (SELECT COUNT(DISTINCT t.nhanthucso) 
+             FROM intermediate_table AS t 
+             WHERE t.nhanthucso > it.nhanthucso) + 1 AS rank 
+     FROM intermediate_table AS it) t1
+JOIN 
+    (SELECT donvichiso, thecheso, 
+            (SELECT COUNT(DISTINCT t.thecheso) 
+             FROM intermediate_table AS t 
+             WHERE t.thecheso > it.thecheso) + 1 AS rank 
+     FROM intermediate_table AS it) t2 ON t1.donvichiso = t2.donvichiso
+JOIN 
+    (SELECT donvichiso, hatangso, 
+            (SELECT COUNT(DISTINCT t.hatangso) 
+             FROM intermediate_table AS t 
+             WHERE t.hatangso > it.hatangso) + 1 AS rank 
+     FROM intermediate_table AS it) t3 ON t1.donvichiso = t3.donvichiso
+JOIN 
+    (SELECT donvichiso, nhanlucso, 
+            (SELECT COUNT(DISTINCT t.nhanlucso) 
+             FROM intermediate_table AS t 
+             WHERE t.nhanlucso > it.nhanlucso) + 1 AS rank 
+     FROM intermediate_table AS it) t4 ON t1.donvichiso = t4.donvichiso
+JOIN 
+    (SELECT donvichiso, atttn, 
+            (SELECT COUNT(DISTINCT t.atttn) 
+             FROM intermediate_table AS t 
+             WHERE t.atttn > it.atttn) + 1 AS rank 
+     FROM intermediate_table AS it) t5 ON t1.donvichiso = t5.donvichiso
+JOIN 
+    (SELECT donvichiso, hdcqs, 
+            (SELECT COUNT(DISTINCT t.hdcqs) 
+             FROM intermediate_table AS t 
+             WHERE t.hdcqs > it.hdcqs) + 1 AS rank 
+     FROM intermediate_table AS it) t6 ON t1.donvichiso = t6.donvichiso
+JOIN 
+    (SELECT donvichiso, hdkts, 
+            (SELECT COUNT(DISTINCT t.hdkts) 
+             FROM intermediate_table AS t 
+             WHERE t.hdkts > it.hdkts) + 1 AS rank 
+     FROM intermediate_table AS it) t7 ON t1.donvichiso = t7.donvichiso
+JOIN 
+    (SELECT donvichiso, hdxhs, 
+            (SELECT COUNT(DISTINCT t.hdxhs) 
+             FROM intermediate_table AS t 
+             WHERE t.hdxhs > it.hdxhs) + 1 AS rank 
+     FROM intermediate_table AS it) t8 ON t1.donvichiso = t8.donvichiso
+JOIN 
+    (SELECT donvichiso, tongdiem, 
+            (SELECT COUNT(DISTINCT t.tongdiem) 
+             FROM intermediate_table AS t 
+             WHERE t.tongdiem > it.tongdiem) + 1 AS rank 
+     FROM intermediate_table AS it) t9 ON t1.donvichiso = t9.donvichiso
+ORDER BY t1.donvichiso;
