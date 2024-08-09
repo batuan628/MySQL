@@ -1,2 +1,2 @@
 # MySQL
-MySQL
+Các câu Mysql từng viết
