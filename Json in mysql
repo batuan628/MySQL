@@ -1,4 +1,4 @@
-CREATE DEFINER=`bkav`@`%` PROCEDURE `tongsodonvi_multiple`()
+CREATE DEFINER= PROCEDURE `tongsodonvi_multiple`()
 BEGIN
  set @i :=0;
     
