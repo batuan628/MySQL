@@ -1,0 +1,69 @@
+CREATE DEFINER=`bkav`@`%` PROCEDURE `tongsodonvi_multiple`()
+BEGIN
+ set @i :=0;
+    
+    -- Create temporary table
+    CREATE TEMPORARY TABLE IF NOT EXISTS temp_table (
+				Ma_bieu VARCHAR(255),
+				Ten_bieu VARCHAR(255),
+				FormName VARCHAR(255),
+        tb_name VARCHAR(255),
+        departmentName VARCHAR(100),
+        yearkey INT,
+        tb VARCHAR(10),
+        sodonvi INT,
+        tongdonvi INT
+    );
+
+    -- Fetch list of table names and convert to JSON array
+    SELECT JSON_ARRAYAGG(table_name) INTO @fact_json
+    FROM ( name_tb);
+
+    -- Get the count of tables
+    SET @fact_count = JSON_LENGTH(@fact_json);
+
+    -- Loop through each table name in the JSON array
+    WHILE @i < @fact_count DO
+        -- Extract table name from JSON array
+        SET @table_name = JSON_UNQUOTE(JSON_EXTRACT(@fact_json, CONCAT('$[', @i, ']')));
+        
+        -- Prepare the main query
+        SET @sql_query = CONCAT(
+				'INSERT INTO temp_table (',
+				'Ma_bieu,Ten_bieu,',
+				'FormName,tb_name, departmentName, yearkey, tb, sodonvi, tongdonvi) ',
+						 '(SELECT ',
+						 'SUBSTRING(b.FormName, 1, LOCATE('' -'', b.FormName) - 1) AS "Ma_bieu",TRIM(SUBSTRING(b.FormName, LOCATE(''- '', b.FormName) + LENGTH(''- ''))) as "Ten_bieu", ',
+						 'b.FormName,tb_name, departmentName, yearkey, tb, sodonvi,tongdonvi ',
+						 ' FROM (SELECT (SELECT @table_name)tb_name,"" as departmentName,yearkey,"TB" as tb, COUNT(DISTINCT organizekey) AS sodonvi, ',
+              '(SELECT COUNT(DISTINCT Emails) FROM department WHERE Emails LIKE ''YB__.__'') AS tongdonvi ',
+              'FROM ', @table_name, ' a  WHERE organizekey LIKE ''YB__.__'' GROUP BY tb_name, departmentName, ifnull(yearkey,0), tb',
+							' UNION ALL SELECT (SELECT @table_name)tb_name,b.departmentName,yearkey,"SL" as tb, COUNT(DISTINCT organizekey) AS sodonvi, ',
+              '(SELECT COUNT(DISTINCT Emails) FROM department WHERE Emails LIKE ''YB__.__'') AS tongdonvi ',
+              'FROM ', @table_name, ' a JOIN department b ON a.organizekey= b.Emails WHERE organizekey LIKE ''YB__.__'' GROUP BY yearkey,organizekey',
+								
+								'  UNION ALL ',
+								'SELECT table_name as tb_name, "" as departmentName, LEFT(now(),4) as  yearkey,"TB" as  tb, 0 as sodonvi,(SELECT COUNT(DISTINCT Emails) FROM department WHERE Emails LIKE ''YB__.__'') AS tongdonvi
+											FROM information_schema.tables 
+											WHERE table_name = @table_name
+												AND table_rows = 0
+												) a  ',
+								'LEFT JOIN `eform-database`.form b',
+								'	ON a.tb_name = xoakytu(CONCAT("fact_",LOWER(b.TableName))) ',
+-- 								
+								
+								')'
+        );
+
+        -- Execute the prepared query
+        PREPARE stmt FROM @sql_query;
+        EXECUTE stmt;
+        DEALLOCATE PREPARE stmt;
+
+        -- Increment counter
+        SET @i = @i + 1;
+    END WHILE;
+SELECT * FROM temp_table;
+    -- Drop the temporary table (if needed at the end)
+    DROP TEMPORARY TABLE IF EXISTS temp_table;
+END
