@@ -1,0 +1,65 @@
+CREATE DEFINER=`bkav`@`%` FUNCTION `Field_table`(
+    `fact` VARCHAR(100),
+    `pragram` VARCHAR(25),
+		`pos` int
+		
+) RETURNS longtext CHARSET utf8 COLLATE utf8_unicode_ci
+BEGIN
+    DECLARE result longtext CHARSET utf8 COLLATE utf8_unicode_ci;
+SET SESSION group_concat_max_len = 1000000;
+-- Tất cả các trường 
+    IF pragram = 'ALL' THEN
+        SELECT GROUP_CONCAT(IF(
+                       NUMERIC_PRECISION = 1,
+                       CONCAT("if(", CONCAT('a.', COLUMN_NAME), "=1,'TRUE','FALSE') AS ", COLUMN_NAME),
+                       CONCAT('a.', COLUMN_NAME)
+											 ) SEPARATOR ', '
+               ) INTO result
+            FROM INFORMATION_SCHEMA.COLUMNS
+            WHERE TABLE_SCHEMA COLLATE utf8_unicode_ci = 'datamart'
+              AND TABLE_NAME COLLATE utf8_unicode_ci = fact
+        ;
+				
+				
+				
+-- Tổng cộng các trường		
+    ELSEIF pragram = 'SUM' THEN
+        SELECT GROUP_CONCAT(
+                   IF(
+                       NUMERIC_PRECISION IS NOT NULL and ORDINAL_POSITION >6 AND NUMERIC_PRECISION !=1 ,
+                       CONCAT('ROUND(SUM(a.', COLUMN_NAME, '),2) AS ', COLUMN_NAME),
+                       if( ORDINAL_POSITION = 8 ,concat(
+													'"TỔNG CỘNG" AS ',COLUMN_NAME
+													),CONCAT('NULL AS ', COLUMN_NAME))
+                   ) SEPARATOR ', '
+               ) INTO result
+        FROM INFORMATION_SCHEMA.COLUMNS
+        WHERE TABLE_SCHEMA COLLATE utf8_unicode_ci = 'datamart'
+          AND TABLE_NAME COLLATE utf8_unicode_ci = fact;
+					
+-- Tên của các cấp 				
+			ELSEIF pragram = "DPM" THEN
+			SELECT GROUP_CONCAT(
+					IF(
+						ORDINAL_POSITION = `pos` ,concat(
+						'UPPER(a.departmentName) AS ',COLUMN_NAME
+						),IF(COLUMN_NAME = "organizekey" ,concat(COLUMN_NAME) ,concat(
+							'NULL AS ',COLUMN_NAME)
+						)
+						
+					)
+			)INTO result
+			FROM INFORMATION_SCHEMA.COLUMNS
+        WHERE TABLE_SCHEMA COLLATE utf8_unicode_ci = 'datamart'
+          AND TABLE_NAME COLLATE utf8_unicode_ci = fact;
+					
+-- Chọn trường nhất định
+					ELSEIF pragram = "POS" THEN 
+					SELECT COLUMN_NAME INTO result
+					FROM INFORMATION_SCHEMA.COLUMNS
+        WHERE TABLE_SCHEMA COLLATE utf8_unicode_ci = 'datamart'
+          AND TABLE_NAME COLLATE utf8_unicode_ci = fact and ORDINAL_POSITION = `pos`; 
+    END IF;
+
+    RETURN result;
+END
