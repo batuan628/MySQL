@@ -1,0 +1,343 @@
+CREATE DEFINER=`bkav`@`%` PROCEDURE `TH_01A`(IN `pOrganizekey` VARCHAR(50), IN `pYearkey` INT(4))
+BEGIN
+    -- Đặt biến cho số thứ tự tăng dần
+    SET @rn := 0;
+    SET @current_type := '';
+		SET @org = IF(@pOrganizekey = 'NN01.01', '', @pOrganizekey);
+		-- Chọn các dữ liệu giữa "I" và "II" và các dữ liệu sau "II"
+		SELECT 
+      "-"AS stt,
+        "Ten" dulieu,
+        "2" as sapxep,
+        "" as id,
+        e.organizekey,
+        e.yearkey,
+        UPPER(c.DepartmentName) as  taisan_2,
+        "" as diachi_3,
+        "" as loaihinhcongtrinh_4,
+        "" as namduavaosudung_5,
+        "" as dientich_dat_6,
+        "" as dientich_sansudung_7,
+        "" as congsuatthietke_8,
+        "" as sohosudungnuoc_thietke_9,
+        "" as sohosudungnuoc_thucte_10,
+        "" as giatri_nguyengia_11,
+        "" as giatri_haomonkhauhao_12,
+        "" as giatri_gtcl_13,
+        "" as chedohaomonkhauhao_14,
+        "FALSE" AS tinhtrangtaisan_hoatdong_15,
+        "FALSE" AS  tinhtrangtaisan_khonghoatdong_16,
+        "" as ghichu_17
+FROM fact_baocaokekhaitaisanketcauhatangcapnuocsach240423100306 e 
+ JOIN department c ON e.organizekey = c.Emails
+JOIN (
+    SELECT 
+        MIN(id) AS stt_start,
+        MAX(id) AS stt_end,
+        organizekey
+    FROM fact_baocaokekhaitaisanketcauhatangcapnuocsach240423100306
+    WHERE tt_1 IN ('I', 'II') 
+      AND yearkey = pYearkey and Get_Id_From_Emails(2, organizekey) = Get_Id_From_Emails(1, @org)
+    GROUP BY organizekey
+    HAVING COUNT(DISTINCT tt_1) = 2
+) t ON e.organizekey = t.organizekey
+WHERE e.id > t.stt_start AND e.id < t.stt_end GROUP BY organizekey
+
+UNION ALL 
+
+SELECT 
+        (@rn := IF(@current_type = organizekey, @rn + 1, 1)) AS stt,
+        (@current_type := organizekey) AS dulieu,
+        sapxep,
+        id,
+        organizekey,
+        yearkey,
+        taisan_2,
+        diachi_3,
+        loaihinhcongtrinh_4,
+        namduavaosudung_5,
+        dientich_dat_6,
+        dientich_sansudung_7,
+        congsuatthietke_8,
+        sohosudungnuoc_thietke_9,
+        sohosudungnuoc_thucte_10,
+        giatri_nguyengia_11,
+        giatri_haomonkhauhao_12,
+        giatri_gtcl_13,
+        chedohaomonkhauhao_14,
+        (CASE WHEN tinhtrangtaisan_hoatdong_15 = 1 THEN 'true' ELSE 'false' END) AS tinhtrangtaisan_hoatdong_15,
+        (CASE WHEN tinhtrangtaisan_khonghoatdong_16 = 1 THEN 'true' ELSE 'false' END) AS tinhtrangtaisan_khonghoatdong_16,
+        ghichu_17
+    FROM (
+
+SELECT  
+    '-' AS stt,
+    d.id,
+    d.organizekey,
+    d.yearkey,
+    d.taisan_2,
+    d.diachi_3,
+    d.loaihinhcongtrinh_4,
+    d.namduavaosudung_5,
+    d.dientich_dat_6,
+    d.dientich_sansudung_7,
+    d.congsuatthietke_8,
+    d.sohosudungnuoc_thietke_9,
+    d.sohosudungnuoc_thucte_10,
+    d.giatri_nguyengia_11,
+    d.giatri_haomonkhauhao_12,
+    d.giatri_gtcl_13,
+    d.chedohaomonkhauhao_14,
+    d.tinhtrangtaisan_hoatdong_15,
+    d.tinhtrangtaisan_khonghoatdong_16,
+    '' AS ghichu_17,
+    'Giua I va II' AS loai_du_lieu,
+    '2' AS sapxep
+FROM fact_baocaokekhaitaisanketcauhatangcapnuocsach240423100306 d
+JOIN (
+    SELECT 
+        MIN(id) AS stt_start,
+        MAX(id) AS stt_end,
+        organizekey
+    FROM fact_baocaokekhaitaisanketcauhatangcapnuocsach240423100306
+    WHERE tt_1 IN ('I', 'II') 
+      AND yearkey = pYearkey and Get_Id_From_Emails(2, organizekey) = Get_Id_From_Emails(1, @org)
+    GROUP BY organizekey
+    HAVING COUNT(DISTINCT tt_1) = 2
+) t ON d.organizekey = t.organizekey
+WHERE d.id > t.stt_start AND d.id < t.stt_end ) a 
+
+
+-- Sau II 
+UNION ALL 
+		SELECT 
+      "-"AS stt,
+        "Ten" dulieu,
+        "4" as sapxep,
+        "" as id,
+        e.organizekey,
+        e.yearkey,
+        UPPER(c.DepartmentName) as  taisan_2,
+        "" as diachi_3,
+        "" as loaihinhcongtrinh_4,
+        "" as namduavaosudung_5,
+        "" as dientich_dat_6,
+        "" as dientich_sansudung_7,
+        "" as congsuatthietke_8,
+        "" as sohosudungnuoc_thietke_9,
+        "" as sohosudungnuoc_thucte_10,
+        "" as giatri_nguyengia_11,
+        "" as giatri_haomonkhauhao_12,
+        "" as giatri_gtcl_13,
+        "" as chedohaomonkhauhao_14,
+        "FALSE" AS tinhtrangtaisan_hoatdong_15,
+        "FALSE" AS  tinhtrangtaisan_khonghoatdong_16,
+        "" as ghichu_17
+FROM fact_baocaokekhaitaisanketcauhatangcapnuocsach240423100306 e 
+ JOIN department c ON e.organizekey = c.Emails
+JOIN (
+            SELECT 
+                   MAX(id) AS stt_ii,
+                   organizekey
+            FROM fact_baocaokekhaitaisanketcauhatangcapnuocsach240423100306
+            WHERE tt_1 = 'II' and yearkey= pYearkey and Get_Id_From_Emails(2, organizekey) = Get_Id_From_Emails(1, @org)
+            GROUP BY organizekey
+        ) t  ON e.organizekey = t.organizekey
+WHERE e.id > t.stt_ii GROUP BY organizekey
+
+UNION ALL 
+
+SELECT 
+        (@rn := IF(@current_type = organizekey, @rn + 1, 1)) AS stt,
+        (@current_type := organizekey) AS dulieu,
+        sapxep,
+        id,
+        organizekey,
+        yearkey,
+        taisan_2,
+        diachi_3,
+        loaihinhcongtrinh_4,
+        namduavaosudung_5,
+        dientich_dat_6,
+        dientich_sansudung_7,
+        congsuatthietke_8,
+        sohosudungnuoc_thietke_9,
+        sohosudungnuoc_thucte_10,
+        giatri_nguyengia_11,
+        giatri_haomonkhauhao_12,
+        giatri_gtcl_13,
+        chedohaomonkhauhao_14,
+        (CASE WHEN tinhtrangtaisan_hoatdong_15 = 1 THEN 'true' ELSE 'false' END) AS tinhtrangtaisan_hoatdong_15,
+        (CASE WHEN tinhtrangtaisan_khonghoatdong_16 = 1 THEN 'true' ELSE 'false' END) AS tinhtrangtaisan_khonghoatdong_16,
+        ghichu_17
+    FROM (
+
+SELECT  
+    '-' AS stt,
+    d.id,
+    d.organizekey,
+    d.yearkey,
+    d.taisan_2,
+    d.diachi_3,
+    d.loaihinhcongtrinh_4,
+    d.namduavaosudung_5,
+    d.dientich_dat_6,
+    d.dientich_sansudung_7,
+    d.congsuatthietke_8,
+    d.sohosudungnuoc_thietke_9,
+    d.sohosudungnuoc_thucte_10,
+    d.giatri_nguyengia_11,
+    d.giatri_haomonkhauhao_12,
+    d.giatri_gtcl_13,
+    d.chedohaomonkhauhao_14,
+    d.tinhtrangtaisan_hoatdong_15,
+    d.tinhtrangtaisan_khonghoatdong_16,
+    '' AS ghichu_17,
+    'Sau II' AS loai_du_lieu,
+    '4' AS sapxep
+FROM fact_baocaokekhaitaisanketcauhatangcapnuocsach240423100306 d
+JOIN (
+            SELECT 
+                   MAX(id) AS stt_ii,
+                   organizekey
+            FROM fact_baocaokekhaitaisanketcauhatangcapnuocsach240423100306
+            WHERE tt_1 = 'II' and yearkey= pYearkey and Get_Id_From_Emails(2, organizekey) = Get_Id_From_Emails(1, @org)
+            GROUP BY organizekey
+        ) t  ON d.organizekey = t.organizekey
+WHERE d.id > t.stt_ii ) a 
+
+-- Tên trường cố định I
+
+UNION ALL 
+
+SELECT
+				"I"AS stt,
+        "mục I" dulieu,
+        "0" as sapxep,
+        "" as id,
+        "" as organizekey,
+        "" as yearkey,
+        "Công trình cấp nước do đơn vị sự nghiệp công lập quản lý" as  taisan_2,
+        "" as diachi_3,
+        "" as loaihinhcongtrinh_4,
+        "" as namduavaosudung_5,
+        "" as dientich_dat_6,
+        "" as dientich_sansudung_7,
+        "" as congsuatthietke_8,
+        "" as sohosudungnuoc_thietke_9,
+        "" as sohosudungnuoc_thucte_10,
+        "" as giatri_nguyengia_11,
+        "" as giatri_haomonkhauhao_12,
+        "" as giatri_gtcl_13,
+        "" as chedohaomonkhauhao_14,
+        "FALSE" AS tinhtrangtaisan_hoatdong_15,
+        "FALSE" AS  tinhtrangtaisan_khonghoatdong_16,
+        "" as ghichu_17
+				
+-- Tên trường cố định II
+
+UNION ALL 
+
+SELECT
+				"II"AS stt,
+        "mục II" dulieu,
+        "3" as sapxep,
+        "" as id,
+        "" as organizekey,
+        "" as yearkey,
+        "Công trình cấp nước do UBND xã quản lý" as  taisan_2,
+        "" as diachi_3,
+        "" as loaihinhcongtrinh_4,
+        "" as namduavaosudung_5,
+        "" as dientich_dat_6,
+        "" as dientich_sansudung_7,
+        "" as congsuatthietke_8,
+        "" as sohosudungnuoc_thietke_9,
+        "" as sohosudungnuoc_thucte_10,
+        "" as giatri_nguyengia_11,
+        "" as giatri_haomonkhauhao_12,
+        "" as giatri_gtcl_13,
+        "" as chedohaomonkhauhao_14,
+        "FALSE" AS tinhtrangtaisan_hoatdong_15,
+        "FALSE" AS  tinhtrangtaisan_khonghoatdong_16,
+        "" as ghichu_17
+
+ORDER BY sapxep,organizekey
+	;	
+END
+
+
+Tổng hợp các Form tổng hợp:
+
+
+CREATE DEFINER=`bkav`@`%` PROCEDURE `BTH`(
+    IN `fact` VARCHAR(255),
+    IN `org` VARCHAR(50),
+    IN `timeKey` INT,
+		IN `in_stt` int,
+		IN `dp_name` int
+)
+BEGIN
+-- DECLARE org VARCHAR(50);
+    -- Lấy thông tin trường
+    SET @fields_all = Field_table(`fact`, 'ALL', 0);
+    SET @fields_sum = Field_table(`fact`, 'SUM', 0);
+    SET @fields_dpm = Field_table(`fact`, 'DPM', `dp_name`);
+    SET @field_pos = Field_table(`fact`, 'POS', `dp_name`);
+    SET @field_pos1 = Field_table(`fact`, 'POS', `in_stt`);
+		SET @org = IF(`org` = 'NN01.01', '', `org`);
+		SET @stt := 0;
+    SET @row_number = 1;
+    SET @current_group = NULL;
+    SET @stt = 0;
+    SET @current_key = '';
+
+    -- Tạo câu lệnh truy vấn động
+    SET @query0 = CONCAT(
+        "SELECT IF(a.organizekey IS NULL, '', if(@org = '',IF(a.stt IS NULL, so_La_Ma(a.increment_by_group), CONCAT(a.increment_by_group, '.', a.stt))
+				,IF(a.stt1 IS NULL, a.increment_by_group, CONCAT(a.increment_by_group, '.', a.stt1)) )) AS ", @field_pos1, ", ", @fields_all, ", a.order_number ",
+        "FROM (SELECT (CASE WHEN @current_group <> t1.organizekey THEN @row_number := @row_number + 1 ELSE @row_number := @row_number END) AS increment_by_group, ",
+        "t1.*, @current_group := t1.organizekey AS dummy_column FROM ("
+    );
+		
+    SET @query1 = CONCAT(
+        "SELECT NULL AS stt1, NULL AS '@current_key := organizekey', ", @fields_dpm, ", 1 AS order_number ",
+        "FROM `eform-database`.department AS a ",
+        "INNER JOIN (SELECT DISTINCT organizekey FROM ", `fact`, " WHERE yearkey = ", `timeKey`, ") AS b ON a.Emails = b.organizekey ",
+        "WHERE a.ParentId = Get_Data_From_Emails(1, '", @org, "') ",
+--         "AND LEFT(a.Emails, 2) = 'YB' ",
+        "UNION ALL "
+    );
+
+    SET @query2 = CONCAT(
+        "SELECT @stt := IF(@current_key = organizekey, @stt + 1, 1) AS stt1, @current_key := organizekey, ", @fields_all, ", 2 AS order_number ",
+        "FROM ", `fact`, " a ",
+        "WHERE Get_Id_From_Emails(2, organizekey) = Get_Id_From_Emails(1, '", @org, "') ",
+        "AND yearkey = ", `timeKey`, " ",
+        "AND ", @field_pos, " != 'Tổng cộng' ORDER BY organizekey"
+    );
+-- 		SET @query2_1 = CONCAT(
+--         "UNION ALL
+-- 				SELECT NULL AS stt1, NULL as '@current_key := organizekey', ", @fields_sum, ", 3 AS order_number ",
+--         "FROM ", `fact`, " a ",
+--         "WHERE Get_Id_From_Emails(2, organizekey) = Get_Id_From_Emails(1, '", @org, "') ",
+--         "AND yearkey = ", `timeKey`, " ",
+--         "AND ", @field_pos, " != 'Tổng cộng'"
+-- 				);
+				
+				
+    SET @query3 = CONCAT(
+        ") AS t1 ORDER BY (CASE WHEN t1.organizekey IS NULL THEN 1 ELSE 0 END) ASC, ",
+        "t1.organizekey ASC, t1.order_number ASC, t1.stt1 ASC) AS a"
+    );
+-- 		SELECT CONCAT(@fields_dpm);
+-- 		SET @final_query = CONCAT (@query2_1);
+    SET @final_query = 
+-- 		SELECT
+		 CONCAT(@query0, @query1, @query2, @query3);
+
+    -- Chuẩn bị và thực thi câu lệnh
+    PREPARE stmt FROM @final_query;
+    EXECUTE stmt;
+    DEALLOCATE PREPARE stmt;
+END
