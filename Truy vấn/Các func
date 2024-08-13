@@ -68,3 +68,72 @@ SET SESSION group_concat_max_len = 1000000;
 
     RETURN result;
 END
+--------------------------------------------------
+CREATE DEFINER= FUNCTION `Field_table_miltiple`(
+		 `fact` VARCHAR(255),
+		 `in_stt` int,
+		 `dp_name` int,
+		 `input_string` VARCHAR(255)
+
+) RETURNS longtext CHARSET utf8 COLLATE utf8_unicode_ci
+BEGIN
+		DECLARE result LONGTEXT DEFAULT '';
+		DECLARE final_result_codinh LONGTEXT DEFAULT '';
+    DECLARE i INT DEFAULT 1;
+    DECLARE count INT;
+		DECLARE part VARCHAR(50);
+    DECLARE key_part int DEFAULT 0;
+    DECLARE value_part VARCHAR(255);
+		DECLARE next_part VARCHAR(50);
+		SET SESSION group_concat_max_len = 1000000;
+SET @field_stt = Field_table(`fact`, 'POS', in_stt);
+    -- Đặt chuỗi đầu vào
+
+    -- Đếm số lượng phần tử (số lần xuất hiện của dấu ;)
+    SET count = LENGTH(input_string) - LENGTH(REPLACE(input_string, ';', '')) + 1;
+    -- Bắt đầu vòng lặp để tách từng cặp key:value
+    WHILE i <= count DO
+        -- Tách từng phần tử key:value
+        SET part = SUBSTRING_INDEX(SUBSTRING_INDEX(input_string, ';', i), ';', -1);
+				
+-- 				IF i < count THEN
+--         SET next_part = SUBSTRING_INDEX(SUBSTRING_INDEX(input_string, ';', i + 1), ';', -1);
+--         SET value_part = CONCAT(part, ",", next_part);
+--     ELSE
+--         SET value_part = part;
+--     END IF;
+-- 		
+				
+				-- Truy vấn trường cố định
+				SELECT CONCAT("\n UNION ALL \n SELECT NULL as ",@field_stt,",\n",key_part," as sap_xep, \n 'Ten' as du_lieu, \n",GROUP_CONCAT(
+					IF(
+						ORDINAL_POSITION = `dp_name` ,concat("(SELECT ",COLUMN_NAME," FROM ",
+								`fact`," WHERE ",@field_stt," = '",part,"' limit 1) as ",
+										COLUMN_NAME),
+										IF(
+												NUMERIC_PRECISION = 1,
+													 CONCAT("'FALSE' AS ",
+															COLUMN_NAME),IF(
+																		ORDINAL_POSITION = in_stt,
+																						CONCAT("'",part,"'"," as ",COLUMN_NAME) ,concat(
+																										'NULL AS ',COLUMN_NAME ))))
+						 SEPARATOR ',\n'
+					 )
+					)INTO result
+						FROM INFORMATION_SCHEMA.COLUMNS
+							WHERE TABLE_SCHEMA COLLATE utf8_unicode_ci = 'datamart'
+								AND TABLE_NAME COLLATE utf8_unicode_ci = fact;
+					-- Sap_xep của trường cố định
+					set key_part := key_part +2;
+					-- Tổng hợp dữ liệu trường cố định
+					SET final_result_codinh = CONCAT(final_result_codinh, ' ', result, '\n');
+					
+					
+					
+					
+        -- Tăng giá trị biến đếm
+        SET i = i + 1;
+    END WHILE;
+
+    RETURN final_result_codinh;
+END

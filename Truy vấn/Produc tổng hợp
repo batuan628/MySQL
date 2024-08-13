@@ -55,3 +55,146 @@ BEGIN
     EXECUTE stmt;
     DEALLOCATE PREPARE stmt;
 END
+
+
+---------------------------------------------------
+CREATE DEFINER= PROCEDURE `LoopThroughParts`(
+		`fact` VARCHAR(255),
+		`org` VARCHAR(50),
+		timeKey int,
+		 `in_stt` int,
+		 `dp_name` int,
+		 `input_string` VARCHAR(255)
+)
+BEGIN
+    DECLARE i INT DEFAULT 1;
+    DECLARE count INT;
+		DECLARE part VARCHAR(50);
+    DECLARE key_part int DEFAULT 0;
+    DECLARE value_part VARCHAR(255);
+		DECLARE next_part VARCHAR(50);
+		DECLARE final_data LONGTEXT DEFAULT '';
+		set @key_part :=1;
+    SET @fields_all = Field_table(`fact`, 'ALL', 0);
+    SET @fields_dpm = Field_table(`fact`, 'DPM', `dp_name`);
+    SET @field_pos = Field_table(`fact`, 'POS', `dp_name`);
+    SET @field_stt = Field_table(`fact`, 'POS', `in_stt`);
+		SET @org = IF(`org` = 'NN01.01', '', `org`);
+		SET @stt := 0;
+    SET @row_number = 1;
+    SET @current_group = NULL;
+    SET @stt1 = 0;
+    SET @current_key = '';
+    -- Đặt chuỗi đầu vào
+
+    -- Đếm số lượng phần tử (số lần xuất hiện của dấu ;)
+    SET count = LENGTH(input_string) - LENGTH(REPLACE(input_string, ';', '')) + 1;
+    -- Bắt đầu vòng lặp để tách từng cặp key:value
+    WHILE i <= count DO
+        -- Tách từng phần tử key:value
+        SET part = SUBSTRING_INDEX(SUBSTRING_INDEX(input_string, ';', i), ';', -1);
+				
+				IF i < count THEN
+        SET next_part = SUBSTRING_INDEX(SUBSTRING_INDEX(input_string, ';', i + 1), ';', -1);
+        SET value_part = CONCAT("'",part, ",", next_part,"'");
+				
+				-- Department
+				SET @dfm = CONCAT("SELECT if (@org = '', '-','+')AS ",@field_stt,
+				", ",@key_part ," as sap_xep , 'DFM' as du_lieu, \n",@fields_dpm,"\n",
+				"FROM ",`fact`," a \n",
+				"JOIN department b ON a.organizekey = b.Emails \n",
+				"JOIN (
+						SELECT 
+								MIN(id) AS stt_start,
+								MAX(id) AS stt_end,
+								organizekey \n",
+						"FROM ",`fact`,
+						"\nWHERE FIND_IN_SET(",@field_stt,",",value_part,")",
+						"AND yearkey = ",timeKey ,"\nAND Get_Id_From_Emails(2, organizekey) = Get_Id_From_Emails(1, @org)",
+						"GROUP BY organizekey
+						HAVING COUNT(DISTINCT ",@field_stt,") = 2
+						) t ON a.organizekey = t.organizekey
+						WHERE a.id > t.stt_start AND a.id < t.stt_end
+						GROUP BY a.organizekey\nUNION ALL"
+						);
+						
+					-- Dữ liệu
+					SET @dta = CONCAT(
+					"SELECT
+						@stt :=if( @org = '',a.stt, IF(@current_key = organizekey, @stt + 1, 1)) AS stt, \n",
+						@key_part," as sap_xep,\n",
+					"@current_key := organizekey as du_lieu, ", @fields_all,
+					"\nFROM(",
+					"SELECT ",@fields_all,
+					"\nFROM ",`fact`," a \n",
+				"JOIN department b ON a.organizekey = b.Emails \n",
+				"JOIN (
+						SELECT 
+								MIN(id) AS stt_start,
+								MAX(id) AS stt_end,
+								organizekey \n",
+						"FROM ",`fact`,
+						"\nWHERE FIND_IN_SET(",@field_stt,",",value_part,")",
+						"AND yearkey = ",timeKey ,"\nAND Get_Id_From_Emails(2, organizekey) = Get_Id_From_Emails(1, @org)",
+						"GROUP BY organizekey
+						HAVING COUNT(DISTINCT ",@field_stt,") = 2
+						) t ON a.organizekey = t.organizekey
+						WHERE a.id > t.stt_start AND a.id < t.stt_end
+						)a WHERE ",@field_pos," is not null\nUNION ALL");
+						
+    ELSE
+        SET value_part = concat("'",part,"'");
+				-- Dữ liệu
+				SET @dfm = CONCAT("SELECT if (@org = '', '-','+')AS ",@field_stt,
+				", ",@key_part ," as sap_xep , 'DFM' as du_lieu, \n",@fields_dpm,"\n",
+				"FROM ",`fact`," a \n",
+				"JOIN department b ON a.organizekey = b.Emails \n",
+				"JOIN (
+						SELECT 
+								
+								MAX(id) AS stt_end,
+								organizekey \n",
+						"FROM ",`fact`,
+						"\nWHERE ",@field_stt," = ",value_part,"\n",
+						"AND yearkey = ",timeKey ,"\nAND Get_Id_From_Emails(2, organizekey) = Get_Id_From_Emails(1, @org)",
+						"GROUP BY organizekey
+						) t ON a.organizekey = t.organizekey
+						WHERE a.id > t.stt_end \n
+						GROUP BY a.organizekey\nUNION ALL"
+						);
+					SET @dta = CONCAT(
+					"SELECT
+						@stt1 :=if( @org = '',a.stt, IF(@current_key = organizekey, @stt1 + 1, 1)) AS stt, \n",
+						@key_part," as sap_xep,\n",
+					"@current_key := organizekey as du_lieu, ", @fields_all,
+					"\nFROM(",
+					"SELECT \n",@fields_all,
+					"\nFROM ",`fact`," a \n",
+				"JOIN department b ON a.organizekey = b.Emails \n",
+				"JOIN (
+						SELECT 
+								
+								MAX(id) AS stt_end,
+								organizekey \n",
+						"FROM ",`fact`,
+						"\nWHERE ",@field_stt," = ",value_part,"\n",
+						"AND yearkey = ",timeKey ,"\nAND Get_Id_From_Emails(2, organizekey) = Get_Id_From_Emails(1, @org)",
+						"GROUP BY organizekey
+						) t ON a.organizekey = t.organizekey
+						WHERE a.id > t.stt_end \n
+						GROUP BY a.organizekey
+						)a WHERE ",@field_pos," is not null\n");
+						
+    END IF;
+		set final_data := concat(final_data,"\n",@dfm,"\n",@dta);
+		-- Dữ liệu
+						set @key_part := @key_part +2;
+		        SET i = i + 1;
+						
+    END WHILE;
+		set @tcd = Field_table_miltiple(`fact`, in_stt, dp_name, input_string);
+		set @final = concat(final_data,"\n",@tcd,"\nORDER BY sap_xep,organizekey;");
+		PREPARE stmt FROM @final;
+    EXECUTE stmt;
+    DEALLOCATE PREPARE stmt;
+END
