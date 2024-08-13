@@ -198,3 +198,63 @@ BEGIN
     EXECUTE stmt;
     DEALLOCATE PREPARE stmt;
 END
+
+-----------------------------------------
+CREATE DEFINER=`ttxldl`@`%` PROCEDURE `looptodead`()
+BEGIN
+    DECLARE done INT DEFAULT FALSE;
+    DECLARE tbl_name LONGTEXT;
+    DECLARE i INT DEFAULT 1;
+    DECLARE count INT;
+    DECLARE manv VARCHAR(255);
+    DECLARE tennv VARCHAR(255);
+    DECLARE full_name LONGTEXT DEFAULT '';
+
+    -- Khai báo con trỏ và điều kiện xử lý
+    DECLARE cur CURSOR FOR SELECT nhan_cong_sx_id FROM vp_vtsxnl;
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+
+    OPEN cur;
+    read_loop: LOOP
+        FETCH cur INTO tbl_name;
+        IF done THEN
+            LEAVE read_loop;
+        END IF;
+
+        -- Xóa tên hiện tại (nếu có) để cập nhật lại
+        UPDATE vp_vtsxnl
+        SET ten_nhan_cong = NULL
+        WHERE nhan_cong_sx_id = tbl_name;
+
+        -- Tính số lượng mã nhân viên trong tbl_name
+        SET count = LENGTH(tbl_name) - LENGTH(REPLACE(tbl_name, ',', '')) + 1;
+        SET i = 1;
+
+        -- Tạo biến tạm để lưu tên
+        SET full_name = '';
+
+        -- Tách và cập nhật từng mã nhân viên
+        WHILE i <= count DO
+            -- Lấy mã nhân viên tại vị trí i
+            SET manv = SUBSTRING_INDEX(SUBSTRING_INDEX(tbl_name, ',', i), ',', -1);
+
+            -- Lấy tên từ bảng vp_nhan_cong_sx
+            set tennv = (SELECT ten_nv
+            FROM vp_nhan_cong_sx
+            WHERE ma_nv = TRIM(manv)
+            LIMIT 1);
+
+            -- Nối tên vào biến tạm
+            SET full_name = CONCAT(full_name, COALESCE(tennv, ''), ', ');
+            SET i = i + 1;
+        END WHILE;
+        -- Loại bỏ dấu phẩy thừa cuối cùng và cập nhật vào bảng gốc
+        UPDATE vp_vtsxnl
+        SET ten_nhan_cong = TRIM(TRAILING ', ' FROM full_name)
+        WHERE nhan_cong_sx_id = tbl_name;
+
+    END LOOP;
+
+    CLOSE cur;
+
+END
