@@ -1,4 +1,4 @@
-CREATE DEFINER=`bkav`@`%` FUNCTION `Field_table`(
+CREATE DEFINER=``@`%` FUNCTION `Field_table`(
     `fact` VARCHAR(100),
     `pragram` VARCHAR(25),
 		`pos` int
