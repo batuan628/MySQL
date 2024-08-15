@@ -1,4 +1,4 @@
-CREATE DEFINER= FUNCTION `Field_table`(
+CREATE DEFINER=`bkav`@`%` FUNCTION `Field_table`(
     `fact` VARCHAR(100),
     `pragram` VARCHAR(25),
 		`pos` int
@@ -13,7 +13,7 @@ SET SESSION group_concat_max_len = 1000000;
                        NUMERIC_PRECISION = 1,
                        CONCAT("if(", CONCAT('a.', COLUMN_NAME), "=1,'TRUE','FALSE') AS ", COLUMN_NAME),
                        CONCAT('a.', COLUMN_NAME)
-											 ) SEPARATOR ', '
+											 )  SEPARATOR ',\n'
                ) INTO result
             FROM INFORMATION_SCHEMA.COLUMNS
             WHERE TABLE_SCHEMA COLLATE utf8_unicode_ci = 'datamart'
@@ -31,7 +31,7 @@ SET SESSION group_concat_max_len = 1000000;
                        if( ORDINAL_POSITION = 8 ,concat(
 													'"TỔNG CỘNG" AS ',COLUMN_NAME
 													),CONCAT('NULL AS ', COLUMN_NAME))
-                   ) SEPARATOR ', '
+                   )  SEPARATOR ',\n'
                ) INTO result
         FROM INFORMATION_SCHEMA.COLUMNS
         WHERE TABLE_SCHEMA COLLATE utf8_unicode_ci = 'datamart'
@@ -47,12 +47,12 @@ SET SESSION group_concat_max_len = 1000000;
 						IF(
                 NUMERIC_PRECISION = 1,
                    CONCAT("'FALSE' AS ",
-											COLUMN_NAME),IF(COLUMN_NAME = "organizekey" ,COLUMN_NAME ,concat(
+											COLUMN_NAME),IF(COLUMN_NAME = "organizekey" ,CONCAT("a.",COLUMN_NAME) ,concat(
 														'NULL AS ',COLUMN_NAME)
 									)
 							)
 						
-					)
+					) SEPARATOR ',\n'
 			)INTO result
 			FROM INFORMATION_SCHEMA.COLUMNS
         WHERE TABLE_SCHEMA COLLATE utf8_unicode_ci = 'datamart'
@@ -64,12 +64,15 @@ SET SESSION group_concat_max_len = 1000000;
 					FROM INFORMATION_SCHEMA.COLUMNS
         WHERE TABLE_SCHEMA COLLATE utf8_unicode_ci = 'datamart'
           AND TABLE_NAME COLLATE utf8_unicode_ci = fact and ORDINAL_POSITION = `pos`; 
+					
+					
+
     END IF;
 
     RETURN result;
 END
 --------------------------------------------------
-CREATE DEFINER= FUNCTION `Field_table_miltiple`(
+CREATE DEFINER=``@`%` FUNCTION `Field_table_miltiple`(
 		 `fact` VARCHAR(255),
 		 `in_stt` int,
 		 `dp_name` int,
@@ -105,7 +108,7 @@ SET @field_stt = Field_table(`fact`, 'POS', in_stt);
 -- 		
 				
 				-- Truy vấn trường cố định
-				SELECT CONCAT("\n UNION ALL \n SELECT NULL as ",@field_stt,",\n",key_part," as sap_xep, \n 'Ten' as du_lieu, \n",GROUP_CONCAT(
+				SELECT CONCAT("\n UNION ALL \n SELECT '",part,"' as ",@field_stt,",\n",key_part," as sap_xep, \n 'Ten' as du_lieu, \n",GROUP_CONCAT(
 					IF(
 						ORDINAL_POSITION = `dp_name` ,concat("(SELECT ",COLUMN_NAME," FROM ",
 								`fact`," WHERE ",@field_stt," = '",part,"' limit 1) as ",

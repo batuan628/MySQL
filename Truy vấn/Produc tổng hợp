@@ -1,4 +1,4 @@
-CREATE DEFINER= PROCEDURE `BTH`(
+CREATE DEFINER=``@`%` PROCEDURE `BTH`(
     IN `fact` VARCHAR(255),
     IN `org` VARCHAR(50),
     IN `timeKey` INT,
@@ -6,6 +6,7 @@ CREATE DEFINER= PROCEDURE `BTH`(
 		IN `dp_name` int
 )
 BEGIN
+IF `org` not like "YB__.__" THEN
 -- DECLARE org VARCHAR(50);
     -- Lấy thông tin trường
     SET @fields_all = Field_table(`fact`, 'ALL', 0);
@@ -54,11 +55,12 @@ BEGIN
     PREPARE stmt FROM @final_query;
     EXECUTE stmt;
     DEALLOCATE PREPARE stmt;
+		END IF;
 END
 
 
 ---------------------------------------------------
-CREATE DEFINER= PROCEDURE `LoopThroughParts`(
+CREATE DEFINER=``@`%` PROCEDURE `LoopThroughParts`(
 		`fact` VARCHAR(255),
 		`org` VARCHAR(50),
 		timeKey int,
@@ -67,6 +69,7 @@ CREATE DEFINER= PROCEDURE `LoopThroughParts`(
 		 `input_string` VARCHAR(255)
 )
 BEGIN
+
     DECLARE i INT DEFAULT 1;
     DECLARE count INT;
 		DECLARE part VARCHAR(50);
@@ -74,6 +77,7 @@ BEGIN
     DECLARE value_part VARCHAR(255);
 		DECLARE next_part VARCHAR(50);
 		DECLARE final_data LONGTEXT DEFAULT '';
+		IF `org` not like "YB__.__" THEN
 		set @key_part :=1;
     SET @fields_all = Field_table(`fact`, 'ALL', 0);
     SET @fields_dpm = Field_table(`fact`, 'DPM', `dp_name`);
@@ -121,7 +125,7 @@ BEGIN
 					-- Dữ liệu
 					SET @dta = CONCAT(
 					"SELECT
-						@stt :=if( @org = '',a.stt, IF(@current_key = organizekey, @stt + 1, 1)) AS stt, \n",
+						@stt :=if( @org = '',a.",@field_stt,", IF(@current_key = organizekey, @stt + 1, 1)) AS stt, \n",
 						@key_part," as sap_xep,\n",
 					"@current_key := organizekey as du_lieu, ", @fields_all,
 					"\nFROM(",
@@ -164,7 +168,7 @@ BEGIN
 						);
 					SET @dta = CONCAT(
 					"SELECT
-						@stt1 :=if( @org = '',a.stt, IF(@current_key = organizekey, @stt1 + 1, 1)) AS stt, \n",
+						@stt1 :=if( @org = '',a.",@field_stt,", IF(@current_key = organizekey, @stt1 + 1, 1)) AS stt, \n",
 						@key_part," as sap_xep,\n",
 					"@current_key := organizekey as du_lieu, ", @fields_all,
 					"\nFROM(",
@@ -182,7 +186,6 @@ BEGIN
 						"GROUP BY organizekey
 						) t ON a.organizekey = t.organizekey
 						WHERE a.id > t.stt_end \n
-						GROUP BY a.organizekey
 						)a WHERE ",@field_pos," is not null\n");
 						
     END IF;
@@ -197,10 +200,11 @@ BEGIN
 		PREPARE stmt FROM @final;
     EXECUTE stmt;
     DEALLOCATE PREPARE stmt;
+		END IF;
 END
 
 -----------------------------------------
-CREATE DEFINER=`ttxldl`@`%` PROCEDURE `looptodead`()
+CREATE DEFINER=``@`%` PROCEDURE `looptodead`()
 BEGIN
     DECLARE done INT DEFAULT FALSE;
     DECLARE tbl_name LONGTEXT;
