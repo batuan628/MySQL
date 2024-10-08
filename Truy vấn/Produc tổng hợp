@@ -1,4 +1,4 @@
-CREATE DEFINER=``@`%` PROCEDURE `BTH`(
+CREATE DEFINER=@`%` PROCEDURE `BTH`(
     IN `fact` VARCHAR(255),
     IN `org` VARCHAR(50),
     IN `timeKey` INT,
@@ -37,20 +37,20 @@ IF `org` not like "YB__.__" THEN
     SET @query1 = CONCAT(
         "UNION ALL
 				SELECT 
-						@stt :=if( @org = '',a.stt, IF(@current_key = organizekey, @stt + 1, 1)) AS stt, 
+						@stt :=if( @org = '',",@field_stt,", IF(@current_key = organizekey, @stt + 1, 1)) AS stt, 
 						@current_key := organizekey as du_lieu, ", @fields_all,
 				" FROM ", `fact`," a ",
 				"JOIN  `eform-database`.department AS b ON b.Emails = a.organizekey 
 						WHERE 
 								yearkey = ",timeKey, "
-								AND b.ParentId =Get_Id_From_Emails(1, @org) and ",@field_pos," !='' and ",@field_stt," !=''
+								AND b.ParentId =Get_Id_From_Emails(1, @org) and ",@field_pos," !='' 
 								ORDER BY organizekey ,pos
 				"
     );
 
 
-    SET @final_query := CONCAT(@query0, @query1);
--- SELECT @query0;
+    SET @final_query = CONCAT(@query0, @query1);
+-- SELECT CONCAT(@query0, @query1);
 --    Chuẩn bị và thực thi câu lệnh
     PREPARE stmt FROM @final_query;
     EXECUTE stmt;
@@ -60,7 +60,7 @@ END
 
 
 ---------------------------------------------------
-CREATE DEFINER=``@`%` PROCEDURE `LoopThroughParts`(
+CREATE DEFINER=@`%` PROCEDURE `LoopThroughParts`(
 		`fact` VARCHAR(255),
 		`org` VARCHAR(50),
 		timeKey int,
@@ -198,6 +198,7 @@ BEGIN
 		set @tcd = Field_table_miltiple(`fact`, in_stt, dp_name, input_string);
 		set @final = concat(final_data,"\n",@tcd,"\nORDER BY sap_xep,organizekey;");
 		PREPARE stmt FROM @final;
+-- 		SELECT @final;
     EXECUTE stmt;
     DEALLOCATE PREPARE stmt;
 		END IF;

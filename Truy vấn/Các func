@@ -1,4 +1,4 @@
-CREATE DEFINER=``@`%` FUNCTION `Field_table`(
+CREATE DEFINER=@`%` FUNCTION `Field_table`(
     `fact` VARCHAR(100),
     `pragram` VARCHAR(25),
 		`pos` int
@@ -11,7 +11,7 @@ SET SESSION group_concat_max_len = 1000000;
     IF pragram = 'ALL' THEN
         SELECT GROUP_CONCAT(IF(
                        NUMERIC_PRECISION = 1,
-                       CONCAT("if(", CONCAT('a.', COLUMN_NAME), "=1,'TRUE','FALSE') AS ", COLUMN_NAME),
+                       CONCAT("if(", CONCAT('a.', COLUMN_NAME), "= 0 AND a.",COLUMN_NAME," ='FALSE','FALSE','TRUE') AS ", COLUMN_NAME),
                        CONCAT('a.', COLUMN_NAME)
 											 )  SEPARATOR ',\n'
                ) INTO result
@@ -72,7 +72,7 @@ SET SESSION group_concat_max_len = 1000000;
     RETURN result;
 END
 --------------------------------------------------
-CREATE DEFINER=``@`%` FUNCTION `Field_table_miltiple`(
+CREATE DEFINER=@`%` FUNCTION `Field_table_miltiple`(
 		 `fact` VARCHAR(255),
 		 `in_stt` int,
 		 `dp_name` int,
